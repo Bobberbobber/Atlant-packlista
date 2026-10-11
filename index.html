@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Packlista Atlantsegling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+/* Layout: en kolumn, sticky statusrad med nedräkning + framsteg, sektioner per kategori som checklistor */
+:root{
+  --bg:#eef2f4; --surface:#ffffff; --fg:#13222e; --muted:#5a6b78; --line:#d5dee4;
+  --accent:#e0a100; --accent-ink:#13222e; --sea:#1d5b79; --done:#7d8c96;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"Source Sans 3",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1820; --surface:#13232e; --fg:#e4ecf1; --muted:#93a5b2; --line:#24384a;
+  --accent:#f2b90f; --accent-ink:#0c1820; --sea:#5fa8cc; --done:#64788a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1820; --surface:#13232e; --fg:#e4ecf1; --muted:#93a5b2; --line:#24384a;
+  --accent:#f2b90f; --accent-ink:#0c1820; --sea:#5fa8cc; --done:#64788a; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.45;padding:0 16px}
+.wrap{max-width:640px;margin:0 auto;padding-block:20px 48px}
+header h1{font-family:var(--display);font-weight:700;font-size:2.3rem;line-height:1;margin:0;letter-spacing:.01em;text-wrap:balance}
+header p{margin:.4rem 0 0;color:var(--muted)}
+.status{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px;margin-top:12px;border-bottom:1px solid var(--line)}
+.stats{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.big{font-family:var(--display);font-size:1.6rem;font-weight:700}
+.lbl{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.bar{height:8px;background:var(--line);border-radius:4px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.filter{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.filter button{font:inherit;font-size:.9rem;padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.filter button[aria-pressed="true"]{background:var(--sea);border-color:var(--sea);color:var(--bg)}
+section{margin-top:26px}
+section h2{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--display);font-weight:700;font-size:1.3rem;text-transform:uppercase;letter-spacing:.06em;color:var(--sea);margin:0 0 6px;padding-bottom:4px;border-bottom:2px solid var(--sea)}
+section h2 span{font-family:var(--body);font-size:.85rem;font-weight:600;color:var(--muted);letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;align-items:flex-start;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line)}
+li label{flex:1;min-width:0;cursor:pointer}
+li small{display:block;color:var(--muted);font-size:.85rem}
+.chip{display:inline-block;margin-left:6px;padding:0 6px;border-radius:4px;background:var(--accent);color:var(--accent-ink);font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;vertical-align:2px}
+li input{appearance:none;width:22px;height:22px;flex:none;margin-top:1px;border:2px solid var(--sea);border-radius:5px;background:var(--surface);cursor:pointer;display:grid;place-content:center}
+li input:checked{background:var(--accent);border-color:var(--accent)}
+li input:checked::after{content:"";width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+li input:focus-visible,button:focus-visible,select:focus-visible,#newItem:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+li.done label{color:var(--done);text-decoration:line-through}
+li.done .chip{opacity:.5}
+.del{background:none;border:0;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:0 4px}
+.tip{margin-top:26px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;color:var(--muted);font-size:.95rem}
+.tip b{color:var(--fg)}
+.add{margin-top:28px;display:flex;gap:8px;flex-wrap:wrap}
+.add input,.add select{font:inherit;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);min-width:0}
+.add input{flex:1 1 200px}
+button.pri{font:inherit;font-weight:600;padding:10px 16px;border:0;border-radius:6px;background:var(--sea);color:var(--bg);cursor:pointer}
+.tools{margin-top:18px;display:flex;gap:16px;flex-wrap:wrap}
+.tools button,.link{background:none;border:0;padding:0;font:inherit;color:var(--sea);text-decoration:underline;cursor:pointer}
+.confirm{margin-top:10px;font-size:.95rem}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+
+</head><body>
+<div class="wrap">
+  <header>
+    <h1>Atlantsegling</h1>  </header>
+
+  <div class="status">
+    <div class="stats">
+      <div><div class="lbl">Packat</div><div class="big" id="count">0 / 0</div></div>
+    </div>
+    <div class="bar"><i id="fill"></i></div>
+    <div class="filter" role="group" aria-label="Visa">
+      <button type="button" id="fAll" aria-pressed="true">Allt</button>
+      <button type="button" id="fSchool" aria-pressed="false">Bara skolans lista</button>
+      <button type="button" id="fLeft" aria-pressed="false">Kvar att packa</button>
+    </div>
+  </div>
+
+  <div id="lists"></div>
+
+  <div class="tip"><b>Det finns tvättmaskin, torktumlare och torkrum ombord,</b> så du behöver inte kläder för alla 18 dagarna. Packa i en mjuk bag och lägg kläderna i torrsäckar eller ziplock-påsar så hålls de torra.</div>
+
+  <form class="add" id="addForm">
+    <input id="newItem" placeholder="Lägg till egen sak…" autocomplete="off">
+    <select id="newCat" aria-label="Kategori"></select>
+    <button class="pri" type="submit">Lägg till</button>
+  </form>
+
+  <div class="tools">
+    <button type="button" id="resetBtn">Avmarkera allt</button>
+  </div>
+  <div class="confirm" id="confirmBox" hidden>Säker? <button type="button" class="pri" id="yesReset">Ja, nollställ</button> <button type="button" class="link" id="noReset">Avbryt</button></div>
+</div>
+
+<script>
+// [namn, anteckning, finns på skolans lista]
+const S = true;
+const DATA = [
+  ["Före avfärd", [
+    ["Beställ EU-kortet hos Försäkringskassan","gratis, gör det idag så det hinner komma"],
+    ["Fyll i och ta fram hälsokortet","", S],
+    ["Kolla med skolan vad som finns ombord","sängkläder, flytväst, sele…"],
+    ["Mobil: kolla att EU-roaming är på","Spanien, Madeira och Kanarieöarna räknas som EU"],
+    ["Ladda ner offline: kartor, musik, poddar, filmer","ingen täckning under flera dygn på överfarten"],
+    ["Ladda all elektronik fullt kvällen innan",""]
+  ]],
+  ["Dokument och pengar", [
+    ["Pass","", S],
+    ["Hälsokort","", S],
+    ["EU-kortet (europeiskt sjukförsäkringskort)",""],
+    ["Reseförsäkring / försäkringsbevis",""],
+    ["Plånbok med bankkort + lite euro","", S],
+    ["Nödkontakter nedskrivna på papper",""]
+  ]],
+  ["Skolarbete", [
+    ["Sociologiboken","", S],
+    ["Idh-boken","", S],
+    ["Anteckningsblock + pennor","", S],
+    ["Dator + laddare","", S]
+  ]],
+  ["Seglarkläder", [
+    ["Egna regnkläder / sjöställ","jacka + byxor, behövs på nattvakterna", S],
+    ["Vattentäta tofflor","", S],
+    ["Seglarhandskar",""],
+    ["Varm mössa",""],
+    ["Keps",""],
+    ["Buff / halsvärmare",""],
+    ["Solglasögon","gärna med snodd så de inte åker i sjön", S]
+  ]],
+  ["Kläder", [
+    ["Underställ i ull ×2","värmer även när det är fuktigt", S],
+    ["Fleece / mellanlager ×2",""],
+    ["Varm jacka (syntet hellre än dun)","nätterna på Atlanten är kalla, dun tappar värmen när det blir fuktigt"],
+    ["T-shirts ×5",""],
+    ["Långärmad UV-tröja","skydd mot solen söder om Madeira"],
+    ["Långärmade tröjor ×2",""],
+    ["Långbyxor ×2",""],
+    ["Shorts ×3","det blir runt 25 grader på Kanarieöarna"],
+    ["Underkläder ×7","det går att tvätta ombord"],
+    ["Strumpor ×7, varav 3 par ull",""],
+    ["Badkläder","", S],
+    ["Sovkläder",""],
+    ["Sandaler eller flip-flops",""],
+    ["Ett set kläder för land",""]
+  ]],
+  ["Sova", [
+    ["Sovsäck eller lakan","kolla med skolan om det finns ombord"],
+    ["Öronproppar",""],
+    ["Sovmask",""]
+  ]],
+  ["Hygien", [
+    ["Tandborste + tandkräm","", S],
+    ["Deo","", S],
+    ["Schampo och tvål","", S],
+    ["Solkräm SPF 50","solen reflekteras i vattnet", S],
+    ["Läppbalsam med SPF",""],
+    ["Badlakan + handduk","", S],
+    ["Rakgrejer",""],
+    ["Handkräm","händerna torkar ut av salt och rep"]
+  ]],
+  ["Medicin och första hjälpen", [
+    ["Åksjuketabletter eller plåster","viktigt! De första dygnen på Atlanten brukar vara värst. Ta innan du mår dåligt"],
+    ["Vätskeersättning (Resorb)","bra om du blir sjösjuk", S],
+    ["Egna mediciner (räcker hela resan + extra)",""],
+    ["Plåster och skavsårsplåster",""],
+    ["Värktabletter",""],
+    ["After sun",""]
+  ]],
+  ["Elektronik", [
+    ["Mobil + laddare","", S],
+    ["Hörlurar","", S],
+    ["Powerbank",""],
+    ["Vattentätt mobilfodral",""],
+    ["Pannlampa med rött ljus","rött ljus förstör inte mörkerseendet"]
+  ]],
+  ["Övrigt", [
+    ["Torrsäck",""],
+    ["Vattenflaska",""],
+    ["Ziplock-påsar",""],
+    ["Snacks","bra under nattvakter och om du mår illa"],
+    ["Cyklop + snorkel","för Madeira och Kanarieöarna"],
+    ["Kortlek eller bok",""]
+  ]]
+];
+
+const KEY = "packlista-segling-2026-v3";
+let state = {checked:{}, custom:[]};
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s) state = Object.assign(state, s); } catch(e){}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
+let filter = "all";
+
+const listsEl = document.getElementById("lists");
+const catSel = document.getElementById("newCat");
+DATA.forEach(([cat],i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=cat; catSel.appendChild(o); });
+const idOf = (cat,name)=> (cat+"|"+name).toLowerCase();
+
+function render(){
+  listsEl.innerHTML = "";
+  let total=0, done=0;
+  DATA.forEach(([cat, items], ci)=>{
+    const all = items.map(it=>({id:idOf(cat,it[0]), name:it[0], note:it[1], school:!!it[2]}))
+      .concat(state.custom.filter(c=>c.cat==ci).map(c=>({id:c.id, name:c.name, note:"", custom:true})));
+    all.forEach(x=>{ total++; if(state.checked[x.id]) done++; });
+    const shown = all.filter(x=> filter==="all" || (filter==="school" && x.school) || (filter==="left" && !state.checked[x.id]));
+    if (!shown.length) return;
+    const sec = document.createElement("section");
+    const h = document.createElement("h2");
+    const nDone = all.filter(x=>state.checked[x.id]).length;
+    const t = document.createElement("div"); t.textContent = cat;
+    const c = document.createElement("span"); c.textContent = `${nDone}/${all.length}`;
+    h.append(t,c); sec.appendChild(h);
+    const ul = document.createElement("ul");
+    shown.forEach(x=>{
+      const li = document.createElement("li");
+      if (state.checked[x.id]) li.className="done";
+      const cb = document.createElement("input");
+      cb.type="checkbox"; cb.id="cb-"+x.id; cb.checked=!!state.checked[x.id];
+      cb.addEventListener("change",()=>{ state.checked[x.id]=cb.checked; save(); render(); document.getElementById("cb-"+x.id)?.focus(); });
+      const lb = document.createElement("label"); lb.htmlFor=cb.id; lb.append(x.name);
+      if (x.school){ const ch=document.createElement("span"); ch.className="chip"; ch.textContent="Skolan"; lb.appendChild(ch); }
+      if (x.note){ const sm=document.createElement("small"); sm.textContent=x.note; lb.appendChild(sm); }
+      li.append(cb, lb);
+      if (x.custom){
+        const d=document.createElement("button"); d.className="del"; d.type="button"; d.setAttribute("aria-label","Ta bort "+x.name); d.textContent="×";
+        d.addEventListener("click",()=>{ state.custom=state.custom.filter(c=>c.id!==x.id); delete state.checked[x.id]; save(); render(); });
+        li.appendChild(d);
+      }
+      ul.appendChild(li);
+    });
+    sec.appendChild(ul);
+    listsEl.appendChild(sec);
+  });
+  document.getElementById("count").textContent = `${done} / ${total}`;
+  document.getElementById("fill").style.width = (total? done/total*100 : 0) + "%";
+}
+
+function countdown(){
+  const dep = new Date(2026, 9, 18);
+  const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const d = Math.round((dep - today)/86400000);
+  document.getElementById("countdown").textContent =
+    d > 1 ? `${d} dagar` : d === 1 ? "I morgon!" : d === 0 ? "Idag – lycka till!" : "Ute och seglar";
+}
+
+const fBtns = {all:"fAll", school:"fSchool", left:"fLeft"};
+Object.entries(fBtns).forEach(([k,id])=>{
+  document.getElementById(id).addEventListener("click",()=>{
+    filter=k;
+    Object.values(fBtns).forEach(b=>document.getElementById(b).setAttribute("aria-pressed", b===id ? "true":"false"));
+    render();
+  });
+});
+
+document.getElementById("addForm").addEventListener("submit", e=>{
+  e.preventDefault();
+  const inp = document.getElementById("newItem"); const name = inp.value.trim();
+  if (!name) return;
+  state.custom.push({id:"c"+Date.now(), name, cat:+catSel.value});
+  inp.value=""; save(); render();
+});
+const box = document.getElementById("confirmBox");
+document.getElementById("resetBtn").addEventListener("click",()=>{ box.hidden=false; });
+document.getElementById("noReset").addEventListener("click",()=>{ box.hidden=true; });
+document.getElementById("yesReset").addEventListener("click",()=>{ state.checked={}; save(); render(); box.hidden=true; });
+
+render();
+</script>
+</body></html>
