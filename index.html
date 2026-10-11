@@ -45,7 +45,8 @@ li input:checked::after{content:"";width:6px;height:11px;border:solid var(--acce
 li input:focus-visible,button:focus-visible,select:focus-visible,#newItem:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 li.done label{color:var(--done);text-decoration:line-through}
 li.done .chip{opacity:.5}
-.del{background:none;border:0;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:0 4px}
+.del{background:none;border:0;color:var(--muted);font-size:1.25rem;line-height:1;cursor:pointer;padding:2px 8px;margin-top:-1px;border-radius:4px;opacity:.6}
+.del:hover,.del:focus-visible{opacity:1;color:var(--fg);background:var(--line)}
 .tip{margin-top:26px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;color:var(--muted);font-size:.95rem}
 .tip b{color:var(--fg)}
 .add{margin-top:28px;display:flex;gap:8px;flex-wrap:wrap}
@@ -87,6 +88,7 @@ button.pri{font:inherit;font-weight:600;padding:10px 16px;border:0;border-radius
 
   <div class="tools">
     <button type="button" id="resetBtn">Avmarkera allt</button>
+    <button type="button" id="restoreBtn" hidden>Visa borttagna saker igen</button>
   </div>
   <div class="confirm" id="confirmBox" hidden>Säker? <button type="button" class="pri" id="yesReset">Ja, nollställ</button> <button type="button" class="link" id="noReset">Avbryt</button></div>
 </div>
@@ -183,7 +185,7 @@ const DATA = [
 ];
 
 const KEY = "packlista-segling-2026-v3";
-let state = {checked:{}, custom:[]};
+let state = {checked:{}, custom:[], hidden:{}};
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s) state = Object.assign(state, s); } catch(e){}
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
 let filter = "all";
@@ -198,6 +200,7 @@ function render(){
   let total=0, done=0;
   DATA.forEach(([cat, items], ci)=>{
     const all = items.map(it=>({id:idOf(cat,it[0]), name:it[0], note:it[1], school:!!it[2]}))
+      .filter(x=>!state.hidden[x.id])
       .concat(state.custom.filter(c=>c.cat==ci).map(c=>({id:c.id, name:c.name, note:"", custom:true})));
     all.forEach(x=>{ total++; if(state.checked[x.id]) done++; });
     const shown = all.filter(x=> filter==="all" || (filter==="school" && x.school) || (filter==="left" && !state.checked[x.id]));
@@ -219,17 +222,21 @@ function render(){
       if (x.school){ const ch=document.createElement("span"); ch.className="chip"; ch.textContent="Skolan"; lb.appendChild(ch); }
       if (x.note){ const sm=document.createElement("small"); sm.textContent=x.note; lb.appendChild(sm); }
       li.append(cb, lb);
-      if (x.custom){
-        const d=document.createElement("button"); d.className="del"; d.type="button"; d.setAttribute("aria-label","Ta bort "+x.name); d.textContent="×";
-        d.addEventListener("click",()=>{ state.custom=state.custom.filter(c=>c.id!==x.id); delete state.checked[x.id]; save(); render(); });
-        li.appendChild(d);
-      }
+      const d=document.createElement("button"); d.className="del"; d.type="button"; d.setAttribute("aria-label","Ta bort "+x.name); d.textContent="×";
+      d.addEventListener("click",()=>{
+        if (x.custom) state.custom=state.custom.filter(c=>c.id!==x.id); else state.hidden[x.id]=true;
+        delete state.checked[x.id]; save(); render();
+      });
+      li.appendChild(d);
       ul.appendChild(li);
     });
     sec.appendChild(ul);
     listsEl.appendChild(sec);
   });
   document.getElementById("count").textContent = `${done} / ${total}`;
+  const nHidden = Object.keys(state.hidden).length;
+  const rb = document.getElementById("restoreBtn");
+  rb.hidden = nHidden===0; rb.textContent = `Visa borttagna saker igen (${nHidden})`;
   document.getElementById("fill").style.width = (total? done/total*100 : 0) + "%";
 }
 
@@ -260,6 +267,7 @@ document.getElementById("addForm").addEventListener("submit", e=>{
 const box = document.getElementById("confirmBox");
 document.getElementById("resetBtn").addEventListener("click",()=>{ box.hidden=false; });
 document.getElementById("noReset").addEventListener("click",()=>{ box.hidden=true; });
+document.getElementById("restoreBtn").addEventListener("click",()=>{ state.hidden={}; save(); render(); });
 document.getElementById("yesReset").addEventListener("click",()=>{ state.checked={}; save(); render(); box.hidden=true; });
 
 render();
